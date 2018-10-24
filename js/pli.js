@@ -51,6 +51,8 @@ function parse_ql_expression(ql_expression) {
         }
         i = i + 1;
     }
+    parsed_ql_expression.splice(0, 0, '(');
+    parsed_ql_expression.push(')');
     return true;
 }
 
@@ -69,14 +71,17 @@ function calculate(parsed_ql_expression) {
             var conj_name = parsed_ql_expression[last_lp_index-1].name;
             var expression_value = get_function_value(conj_name, custom_conj[conj_name].num, tmp_expression);
             replace_expression(parsed_ql_expression, last_lp_index - 1, rp_index, expression_value); //左边要包含联结词名称
-        }else if(tmp_expression.indexOf('∧')!=-1 ||
-        tmp_expression.indexOf('∨')!=-1 ||
-        tmp_expression.indexOf('⊕')!=-1 ||
-        tmp_expression.indexOf('→')!=-1 ||
-        tmp_expression.indexOf('↔')!=-1){
+        } else if (tmp_expression.indexOf('∧') != -1 ||
+            tmp_expression.indexOf('∨') != -1 ||
+            tmp_expression.indexOf('⊕') != -1 ||
+            tmp_expression.indexOf('→') != -1 ||
+            tmp_expression.indexOf('↔') != -1) {
 
             var expression_value = calculate_no_bucket_expression(tmp_expression);
             replace_expression(parsed_ql_expression, last_lp_index, rp_index, expression_value);
+        }else{
+            term_value = get_term_value(tmp_expression);
+            replace_expression(parsed_ql_expression, last_lp_index, rp_index, term_value);
         }
     }
 
