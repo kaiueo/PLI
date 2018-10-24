@@ -1,6 +1,3 @@
-function hello() {
-    alert('hello');
-}
 
 var first_class_conj = [];
 var first_class_conj_names = []
@@ -35,7 +32,7 @@ function parse_ql_expression(ql_expression) {
             if (custom_conj_names.indexOf(name) != -1) {
                 parsed_ql_expression.push(new QLElement(QLETYPE.CONJ, name));
             } else if (i + 1 < ql_expression.length && ql_expression[i + 1] == '(') {
-                show_error('联结词' + name + '未定义');
+                show_message('联结词' + name + '未定义');
                 return false;
             } else {
                 if (var_name_list.indexOf(name) == -1) {
@@ -49,7 +46,7 @@ function parse_ql_expression(ql_expression) {
         } else if (ql_expression[i].search(/[¬∧∨→⊕↔),(]/) != -1) {
             parsed_ql_expression.push(ql_expression[i]);
         } else {
-            show_error("存在非法字符" + ql_expression[i]);
+            show_message("存在非法字符" + ql_expression[i]);
             return false;
         }
         i = i + 1;
@@ -58,23 +55,100 @@ function parse_ql_expression(ql_expression) {
 }
 
 function calculate(parsed_ql_expression) {
-    while (last_lp_index = parsed_ql_expression.lastIndexOf('(') != -1) {
+    var last_lp_index = 0;
+    while ((last_lp_index = parsed_ql_expression.lastIndexOf('(')) != -1) {
         var rp_index = last_lp_index + 1;
-        while (parsed_ql_expression != ')') {
+        while (parsed_ql_expression[rp_index] != ')') {
             rp_index = rp_index + 1;
         }
         var tmp_expression = [];
-        for(i=last_lp_index;i<rp_index;i++){
-            tmp_expression.push[parsed_ql_expression][i];
+        for(i=last_lp_index+1;i<rp_index;i++){
+            tmp_expression.push(parsed_ql_expression[i]);
         }
         if(tmp_expression.indexOf(',')!=-1){
             var conj_name = parsed_ql_expression[last_lp_index-1].name;
-            
+            var expression_value = get_function_value(conj_name, custom_conj[conj_name].num, tmp_expression);
+            replace_expression(parsed_ql_expression, last_lp_index - 1, rp_index, expression_value); //左边要包含联结词名称
+        }else if(tmp_expression.indexOf('∧')!=-1 ||
+        tmp_expression.indexOf('∨')!=-1 ||
+        tmp_expression.indexOf('⊕')!=-1 ||
+        tmp_expression.indexOf('→')!=-1 ||
+        tmp_expression.indexOf('↔')!=-1){
 
-            
+            var expression_value = calculate_no_bucket_expression(tmp_expression);
+            replace_expression(parsed_ql_expression, last_lp_index, rp_index, expression_value);
         }
     }
 
+}
+
+function calculate_no_bucket_expression(inner_expression){
+    while(inner_expression.length!=1){
+        if(inner_expression.indexOf('∧')!=-1){
+            get_first_class_conj_value(inner_expression, '∧');
+
+        }else if(inner_expression.indexOf('∨')!=-1){
+            get_first_class_conj_value(inner_expression, '∨');
+            
+        }else if(inner_expression.indexOf('⊕')!=-1){
+            get_first_class_conj_value(inner_expression, '⊕');
+            
+        }else if(inner_expression.indexOf('→')!=-1){
+            get_first_class_conj_value(inner_expression, '→');
+            
+        }else if(inner_expression.indexOf('↔')!=-1){
+            get_first_class_conj_value(inner_expression, '↔');
+
+        }
+    }
+    return inner_expression[0];
+}
+
+function get_first_class_conj_value(inner_expression, conj_name){
+
+    var r_index = inner_expression.indexOf(conj_name);
+    l_index = r_index-1;
+    while(l_index>=0&&is_var(inner_expression[l_index])){
+        l_index = l_index - 1;
+    }
+    l_index = l_index + 1;
+    left = l_index;
+    term_values = [];
+
+    for(i=0;i<2;i++){
+        term = []
+        for(j=l_index;j<r_index;j++){
+            term.push(inner_expression[j]);
+        }
+        term_value = get_term_value(term);
+        term_values.push(term_value);
+
+        // 防止r_index越界
+        if (i == 0) {
+            l_index = r_index + 1;
+            r_index = l_index + 1;
+            while (r_index < inner_expression.length && is_var(inner_expression[r_index])) {
+                r_index = r_index + 1;
+            }
+        }
+        
+    }
+    func = first_class_conj[conj_name];
+    var expression_value = func[bin2dec(term_values)];
+    replace_expression(inner_expression, left, r_index-1, expression_value);
+}
+
+function is_var(qlelement){
+    if(qlelement=='∧'||qlelement=='∨'||qlelement=='→'||qlelement=='⊕'||qlelement=='↔'){
+        return false
+    }
+    return true;
+
+}
+
+function replace_expression(expression, left, right, value){
+    expression.splice(left, right-left+1);
+    expression.splice(left, 0, value);
 }
 
 function get_function_value(function_name, function_dim, inner_expression){
@@ -96,7 +170,6 @@ function get_function_value(function_name, function_dim, inner_expression){
         }
         
     }
-
     func = custom_conj[function_name];
     return func[bin2dec(term_values)];
 }
@@ -189,14 +262,22 @@ function generate_conj(name, num, truth) {
     }
 }
 
-function show_error(message) {
+function show_message(message) {
     document.getElementById('messagelabel').innerText = message;
 }
 
+
 function begin() {
+
     custom_conj = [];
     custom_conj_err_msg = '';
-    show_error('');
+    custom_conj_names = [];
+    var_name_list = [];
+    var_names = [];
+    parsed_ql_expression = [];
+    first_class_conj_names = [];
+    first_class_conj = [];
+    show_message('');
 
     generate_first_class_conj()
     var pletext = document.getElementById('pletext').value;
@@ -206,9 +287,12 @@ function begin() {
     ql_expression = pletext.replace(/#[ \n]*?(?<define>((\w[\w\d]*) +?(\d+) +?((\d+ *)+)[ \n]*)+)/g, ''); // 去除输入的文本中自定义联结词的部分
     check_ql_expression(ql_expression);
     parse_ql_expression(ql_expression);
+    calculate(parsed_ql_expression);
 
 
-    alert(ql_expression)
+    //alert(ql_expression)
+    //var result = get_function_value(ql_expression);
+    show_message(parsed_ql_expression[0]);
 }
 
 function check_ql_expression(pletext) {
@@ -251,7 +335,7 @@ function custom_func_define(pletext) {
 
     // 判断生成自定义联结词的过程中有没有错误
     if (!is_success) {
-        show_error(custom_conj_err_msg);
+        show_message(custom_conj_err_msg);
         return false;
     }
 
