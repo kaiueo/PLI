@@ -5,6 +5,7 @@ var custom_conj = [];
 var custom_conj_names = []
 var custom_conj_err_msg = '';
 var parsed_ql_expression = [];
+var origin_parsed_ql_expression = []
 var var_names = []; // 存储变元对象
 var var_name_list = []; // 存储变元名称
 
@@ -54,6 +55,32 @@ function parse_ql_expression(ql_expression) {
     parsed_ql_expression.splice(0, 0, '(');
     parsed_ql_expression.push(')');
     return true;
+}
+
+function assion_value(i, len){
+    bin_list = dec2bin(i, len);
+    for(j=0;j<len;j++){
+        var_names[var_name_list[j]].value = bin_list[j];
+    }
+}
+
+function dec2bin(n, len){
+    bin_list = []
+    if(n==0){
+        bin_list = [0];
+    }else{
+        bin_list = [];
+        while(n>0){
+            r = n%2;
+            n = parseInt(n/2);
+            bin_list.unshift(r);
+        }
+    }
+    while(bin_list.length<len){
+        bin_list.unshift(0);
+    }
+    return bin_list;
+    
 }
 
 function calculate(parsed_ql_expression) {
@@ -292,12 +319,42 @@ function begin() {
     ql_expression = pletext.replace(/#[ \n]*?(?<define>((\w[\w\d]*) +?(\d+) +?((\d+ *)+)[ \n]*)+)/g, ''); // 去除输入的文本中自定义联结词的部分
     check_ql_expression(ql_expression);
     parse_ql_expression(ql_expression);
-    calculate(parsed_ql_expression);
+    origin_parsed_ql_expression = parsed_ql_expression.slice(0);
+    len = var_name_list.length;
+    maxdec = Math.pow(2,len);
+    result_truth = [];
+    for(ith=0;ith<maxdec;ith++){
+        assion_value(ith, len);
+        calculate(parsed_ql_expression);
+        result_truth.push(parsed_ql_expression[0]);
+        parsed_ql_expression = origin_parsed_ql_expression.slice(0);
+    }
+
+
+    if (result_truth.indexOf(0) == -1) {
+        show_message('永真式');
+        tfflag = 1;
+    } else if (result_truth.indexOf(1) == -1) {
+        show_message('永假式');
+    } else {
+        var_value = [];
+        for (i = 0; i < result_truth.length; i++) {
+            if (result_truth[i] == 1) {
+                var_value.push(dec2bin(i, var_name_list.length));
+            }
+        }
+        show_message(var_value);
+    }
+
+
+
+    //calculate(parsed_ql_expression);
 
 
     //alert(ql_expression)
     //var result = get_function_value(ql_expression);
-    show_message(parsed_ql_expression[0]);
+    //show_message(parsed_ql_expression[0]);
+    //show_message(result_truth);
 }
 
 function check_ql_expression(pletext) {
