@@ -430,7 +430,7 @@ function rp(n_array, n_len) {
         arr.push(i);
     }
     var cal = function(r, a, c) {
-        if (c == 0) {
+        if (c == 0||a.length == 0) {
             result.push(r);
             return;
         }
@@ -485,7 +485,7 @@ function funcompleset(){
     tmp_generated_expressions = [];
     var fcs_result = false;
 
-    for(var i = 0;i<5;i++){
+    for(var i = 0;i<25;i++){
         fcs_result = generate_expression();
         for(var j = 0;j<advance_expressions.length;j++){
             base_expressions.push(advance_expressions[j]);
@@ -505,70 +505,7 @@ function funcompleset(){
         show_message("不完全");
     }
 
-
-    // generate_base_expression();
-    // generate_advance_expression();
 }
-
-// function generate_base_expression(){
-//     var con_len = custom_conj_names.length;
-//     for(var i = 0; i<con_len;i++){
-//         var conj = custom_conj[custom_conj_names[i]];
-
-//         var rp_result = rp(2, conj.num);
-//         for(var j = 0;j<rp_result.length;j++){
-//             var expression = [];
-//             expression.push(new QLElement(QLETYPE.CONJ, conj.name));
-//             expression.push('(');
-//             for(var k = 0;k<conj.num;k++){
-//                 expression.push(var_names[var_name_list[rp_result[j][k]]]);
-//                 expression.push(',');
-//             }
-//             expression.splice(expression.length-1);
-//             expression.push(')');
-//             var truth_table = calculate_truth_table(expression);
-//             is_new_expression(expression, truth_table, 1);
-//         }
-//     }
-
-// }
-
-// function generate_advance_expression() {
-//     var con_len = custom_conj_names.length;
-//     var max_num = 0;
-
-//     for(var i = 0;i<con_len;i++){
-//         if(custom_conj[custom_conj_names[i]].num>max_num){
-//             max_num = custom_conj[custom_conj_names[i]].num;
-//         }
-//     }
-
-//     for (var i = 1; i <= max_num; i++) {
-//         for (var j = 0; j < con_len; j++) {
-//             var conj = custom_conj[custom_conj_names[j]];
-//             if (conj.num >= i) {
-//                 var rp_result_adv = rp(base_expressions.length, i);
-//                 var atom_var_len = conj.num - i;
-//                 var rp_result_base = rp(2, atom_var_len);
-//                 for (var a = 0; a < rp_result_adv.length; a++) {
-//                     for (var b = 0; b < rp_result_base.length; b++) {
-
-//                         var expression = assemble_expression(conj, rp_result_adv[a], rp_result_base[b]);
-//                         var truth_table = calculate_truth_table(expression);
-//                         is_new_expression(expression, truth_table, 0);
-//                         if(generated_expressions.length==16){
-//                             show_message("完全");
-//                         }
-//                     }
-//                 }
-//             }
-
-//         }
-//     }
-//     if(generated_expressions.length<16){
-//         show_message("不完全");
-//     }
-// }
 
 function generate_expression(){
     var con_len = custom_conj_names.length;
@@ -685,7 +622,7 @@ function is_new_expression(expression, truth_table){
         var len = generated_expressions.length;
         expression_records[dec] = len;
         generated_expressions.push(expression.slice(0));
-        advance_expressions.push(expression.slice(0));
+        tmp_generated_expressions.push(expression.slice(0));
     }
 
 }
