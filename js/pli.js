@@ -9,6 +9,10 @@ var origin_parsed_ql_expression = []
 var var_names = []; // 存储变元对象
 var var_name_list = []; // 存储变元名称
 
+var generated_expressions = [];
+var expression_records = [];
+var base_expressions = [];
+
 function QLElement(type, name) {
     this.type = type;
     this.name = name;
@@ -108,7 +112,16 @@ function calculate(parsed_ql_expression) {
             replace_expression(parsed_ql_expression, last_lp_index, rp_index, expression_value);
         }else{
             term_value = get_term_value(tmp_expression);
-            replace_expression(parsed_ql_expression, last_lp_index, rp_index, term_value);
+            if(last_lp_index-1>=0&&parsed_ql_expression[last_lp_index-1].type==QLETYPE.CONJ){
+                var conj_name = parsed_ql_expression[last_lp_index-1].name;
+                var func = custom_conj[conj_name];
+                var expression_value = func[term_value];
+                //var expression_value = get_function_value(conj_name, custom_conj[conj_name].num, tmp_expression);
+                replace_expression(parsed_ql_expression, last_lp_index - 1, rp_index, expression_value); 
+            }else{
+                replace_expression(parsed_ql_expression, last_lp_index, rp_index, term_value);
+            }
+            
         }
     }
 
@@ -149,7 +162,7 @@ function get_first_class_conj_value(inner_expression, conj_name){
 
     for(i=0;i<2;i++){
         term = []
-        for(j=l_index;j<r_index;j++){
+        for(var j=l_index;j<r_index;j++){
             term.push(inner_expression[j]);
         }
         term_value = get_term_value(term);
@@ -188,7 +201,7 @@ function get_function_value(function_name, function_dim, inner_expression){
     r_index = inner_expression.indexOf(',');
     term_values = [];
 
-    for(i=0;i<function_dim;i++){
+    for(var i=0;i<function_dim;i++){
         term = []
         for(j=l_index;j<r_index;j++){
             term.push(inner_expression[j]);
@@ -209,7 +222,7 @@ function get_function_value(function_name, function_dim, inner_expression){
 function bin2dec(binary_array){
     binary_array.reverse();
     var decimal = 0;
-    for(i=0;i<binary_array.length;i++){
+    for(var i=0;i<binary_array.length;i++){
         decimal = decimal + binary_array[i] * Math.pow(2, i);
     }
     return decimal;
@@ -323,7 +336,7 @@ function begin() {
     len = var_name_list.length;
     maxdec = Math.pow(2,len);
     result_truth = [];
-    for(ith=0;ith<maxdec;ith++){
+    for(var ith=0;ith<maxdec;ith++){
         assion_value(ith, len);
         calculate(parsed_ql_expression);
         result_truth.push(parsed_ql_expression[0]);
@@ -331,20 +344,21 @@ function begin() {
     }
 
 
-    if (result_truth.indexOf(0) == -1) {
-        show_message('永真式');
-        tfflag = 1;
-    } else if (result_truth.indexOf(1) == -1) {
-        show_message('永假式');
-    } else {
-        var_value = [];
-        for (i = 0; i < result_truth.length; i++) {
-            if (result_truth[i] == 1) {
-                var_value.push(dec2bin(i, var_name_list.length));
-            }
-        }
-        show_message(var_value);
-    }
+    // if (result_truth.indexOf(0) == -1) {
+    //     show_message('永真式');
+    //     tfflag = 1;
+    // } else if (result_truth.indexOf(1) == -1) {
+    //     show_message('永假式');
+    // } else {
+    //     var_value = [];
+    //     for (i = 0; i < result_truth.length; i++) {
+    //         if (result_truth[i] == 1) {
+    //             var_value.push(dec2bin(i, var_name_list.length));
+    //         }
+    //     }
+    //     show_message(var_value);
+    // }
+    show_message(result_truth);
 
 
 
@@ -403,5 +417,171 @@ function custom_func_define(pletext) {
 
     return true;
 
+
+}
+
+// 可重复排列函数
+function rp(n_array, n_len) {
+    var result = [];
+    var arr = [];
+    for(var i = 0;i<n_array;i++){
+        arr.push(i);
+    }
+    var cal = function(r, a, c) {
+        if (c == 0) {
+            result.push(r);
+            return;
+        }
+        for (var i = 0; i < a.length; i++) {
+            cal(r.concat(a[i]), a.slice(0, i + 1).concat(a.slice(i + 1)), c - 1);
+        }
+    };
+    cal([], arr, n_len);
+    return result;
+}
+
+function funcompleset(){
+    custom_conj = [];
+    custom_conj_err_msg = '';
+    custom_conj_names = [];
+    var_name_list = [];
+    var_names = [];
+    parsed_ql_expression = [];
+    first_class_conj_names = [];
+    first_class_conj = [];
+    generated_expressions = [];
+    expression_records = [];
+    base_expressions = [];
+
+    for(var i = 0;i<16;i++){
+        expression_records[i] = -1;
+    }
+    var_name_list.push("p");
+    var_names["p"] = new QLElement(QLETYPE.TERM, "p");
+    var_name_list.push("q");
+    var_names["q"] = new QLElement(QLETYPE.TERM, "q");
+
+    generated_expressions.push([var_names["p"]]);
+    expression_records[3] = 0;
+    generated_expressions.push([var_names["q"]]);
+    expression_records[5] = 1;
+
+    show_message('');
+
+    generate_first_class_conj()
+    var pletext = document.getElementById('pletext').value;
+    if (!custom_func_define(pletext)) {
+        return;
+    }
+
+    generate_base_expression();
+    generate_advance_expression();
+}
+
+function generate_base_expression(){
+    var con_len = custom_conj_names.length;
+    for(var i = 0; i<con_len;i++){
+        var conj = custom_conj[custom_conj_names[i]];
+
+        var rp_result = rp(2, conj.num);
+        for(var j = 0;j<rp_result.length;j++){
+            var expression = [];
+            expression.push(new QLElement(QLETYPE.CONJ, conj.name));
+            expression.push('(');
+            for(var k = 0;k<conj.num;k++){
+                expression.push(var_names[var_name_list[rp_result[j][k]]]);
+                expression.push(',');
+            }
+            expression.splice(expression.length-1);
+            expression.push(')');
+            var truth_table = calculate_truth_table(expression);
+            is_new_expression(expression, truth_table, 1);
+        }
+    }
+
+}
+
+function generate_advance_expression() {
+    var con_len = custom_conj_names.length;
+    var max_num = 0;
+
+    for(var i = 0;i<con_len;i++){
+        if(custom_conj[custom_conj_names[i]].num>max_num){
+            max_num = custom_conj[custom_conj_names[i]].num;
+        }
+    }
+
+    for (var i = 1; i <= max_num; i++) {
+        for (var j = 0; j < con_len; j++) {
+            var conj = custom_conj[custom_conj_names[j]];
+            if (conj.num >= i) {
+                var rp_result_adv = rp(base_expressions.length, i);
+                var atom_var_len = conj.num - i;
+                var rp_result_base = rp(2, atom_var_len);
+                for (var a = 0; a < rp_result_adv.length; a++) {
+                    for (var b = 0; b < rp_result_base.length; b++) {
+
+                        var expression = assemble_expression(conj, rp_result_adv[a], rp_result_base[b]);
+                        var truth_table = calculate_truth_table(expression);
+                        is_new_expression(expression, truth_table, 0);
+                        if(generated_expressions.length==16){
+                            show_message("完全");
+                        }
+                    }
+                }
+            }
+
+        }
+    }
+    if(generated_expressions.length<16){
+        show_message("不完全");
+    }
+}
+
+
+
+function assemble_expression(conj, rp_adv, rp_base){
+    var expression = [];
+    expression.push(new QLElement(QLETYPE.CONJ, conj.name));
+    expression.push('(');
+    for(var i = 0;i<rp_adv.length;i++){
+        var tmp_exp = base_expressions[rp_adv[i]];
+        expression = expression.concat(tmp_exp);
+        expression.push(',');
+    }
+    for(var i = 0;i<rp_base.length;i++){
+        expression.push(var_names[var_name_list[rp_base[i]]]);
+        expression.push(',');
+    }
+    expression.splice(expression.length-1);
+    expression.push(')');
+
+    return expression;
+}
+
+function calculate_truth_table(expression){
+    parsed_ql_expression = expression.slice(0);
+    var len = var_name_list.length;
+    var maxdec = Math.pow(2,len);
+    var result_truth = [];
+    for(var ith=0;ith<maxdec;ith++){
+        assion_value(ith, len);
+        calculate(parsed_ql_expression);
+        result_truth.push(parsed_ql_expression[0]);
+        parsed_ql_expression = expression.slice(0);
+    }
+    return result_truth;
+}
+
+function is_new_expression(expression, truth_table, base){
+    var dec = bin2dec(truth_table);
+    if(expression_records[dec]==-1){
+        var len = generated_expressions.length;
+        expression_records[dec] = len;
+        generated_expressions.push(expression.slice(0));
+        if(base==1){
+            base_expressions.push(expression.slice(0));
+        }
+    }
 
 }
