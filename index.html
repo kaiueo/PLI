@@ -2,21 +2,24 @@
 
 <head>
     <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="css/style.css">
     <title>命题逻辑</title>
 </head>
 
 <body>
     <form action="">
         <textarea id="pletext" cols="30" rows="10"></textarea>
-        <br>
-        <label id="messagelabel"></label>
-        <br>
+        <br><br>
         <button id="truebtn" type="button" onclick="begin()">判断公式可满足</button>
-        <br>
+        <br><br>
         <button id="completebtn" type="button" onclick="funcompleset()">判断完全集</button>
+        <br><br>
+        <div>
+            <label id="messagelabel"></label>
+        <br><br>
+        <div id="resultdiv"></div>
+        </div>
     </form>
-
-
 
     <script type="text/javascript" src="js/pli.js"></script>
 

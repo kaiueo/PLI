@@ -1,0 +1,22 @@
+table {
+    font-size: 20px;
+}
+
+#messagelabel {
+    font-size: 20px;
+}
+
+button {
+    border: none;
+    background-color: #e7e7e7;
+    color: black;
+    padding: 6px 10px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+}
+
+#pletext {
+    font-size: 16px;
+}

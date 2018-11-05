@@ -36,11 +36,11 @@ function parse_ql_expression(ql_expression) {
             result = get_var_name(ql_expression, i);
             name = result['name'];
             i = result['offset'];
-            if (custom_conj_names.indexOf(name) != -1) {
-                parsed_ql_expression.push(new QLElement(QLETYPE.CONJ, name));
-            } else if (i + 1 < ql_expression.length && ql_expression[i + 1] == '(') {
+            if (custom_conj_names.indexOf(name)==-1 && i + 1 < ql_expression.length && ql_expression[i + 1] == '('){
                 show_message('联结词' + name + '未定义');
                 return false;
+            } else if  (custom_conj_names.indexOf(name) != -1) {
+                parsed_ql_expression.push(new QLElement(QLETYPE.CONJ, name));
             } else {
                 if (var_name_list.indexOf(name) == -1) {
                     var_name_list.push(name);
@@ -300,6 +300,9 @@ function generate_conj(name, num, truth) {
         for (i = 0; i < truth.length; i++) {
             conj.push(parseInt(truth[i]));
         }
+        if(conj.num==0){
+            conj.push(parseInt(truth[0]));
+        }
         custom_conj[conj.name] = conj;
         custom_conj_names.push(conj.name);
         return true;
@@ -309,9 +312,85 @@ function generate_conj(name, num, truth) {
     }
 }
 
-function show_message(message) {
-    document.getElementById('messagelabel').innerText = message;
+function show_message(message, type=0, arr=[]) {
+    var messagelabel = document.getElementById('messagelabel');
+    var resultdiv = document.getElementById('resultdiv');
+    messagelabel.innerText = '';
+    resultdiv.innerHTML = '';
+    switch (type) {
+        case 0:
+            messagelabel.innerText = message;
+            break;
+        case 1:
+            messagelabel.innerText = message;
+            var result_table = document.createElement('table');
+            var len = var_name_list.length;
+            var tr1 = document.createElement('tr');
+            for(var i = 0;i<len;i++){
+                var td1 = document.createElement('td');
+                td1.innerText = var_name_list[i];
+                tr1.appendChild(td1);
+            }
+            result_table.appendChild(tr1);
+            for (var i = 0; i < arr.length; i++) {
+                var tmp_tr = document.createElement('tr');
+                for (var j = 0; j < arr[i].length; j++) {
+                    var tmp_td = document.createElement('td');
+                    tmp_td.innerText = arr[i][j];
+                    tmp_tr.appendChild(tmp_td);
+
+                }
+                result_table.appendChild(tmp_tr);
+            }
+            resultdiv.appendChild(result_table);
+            break;
+        case 2:
+            messagelabel.innerText = message;
+            var result_table = document.createElement('table');
+            for(var i = 0;i<generated_expressions.length;i++){
+                var exp_text = get_expression_text(generated_expressions[i]);
+                var tmp_tr = document.createElement('tr');
+                tmp_tr.innerText = exp_text;
+                result_table.appendChild(tmp_tr);
+            }
+            resultdiv.appendChild(result_table);
+            break;
+        case 3:
+            messagelabel.innerText = message;
+            var result_table = document.createElement('table');
+            for(var i = 0;i<generated_expressions.length;i++){
+                var exp_text = get_expression_text(generated_expressions[i]);
+                var tmp_tr = document.createElement('tr');
+                tmp_tr.innerText = exp_text;
+                result_table.appendChild(tmp_tr);
+            }
+            var notp_text = '¬p↔'+get_expression_text(generated_expressions[expression_records[12]]);
+            var impc_text = 'p→q↔'+get_expression_text(generated_expressions[expression_records[13]]);
+            var impc_tr = document.createElement('tr');
+            var notp_tr = document.createElement('tr');
+            impc_tr.innerText = impc_text;
+            notp_tr.innerText = notp_text;
+            result_table.appendChild(impc_tr);
+            result_table.appendChild(notp_tr);
+            resultdiv.appendChild(result_table);
+    }
+    //document.getElementById('messagelabel').innerText = message;
 }
+
+function get_expression_text(expression){
+    var exp_text = "";
+    for(var i = 0;i<expression.length;i++){
+        if(expression[i].type==QLETYPE.CONJ){
+            exp_text = exp_text + expression[i].name;
+        }else if(expression[i].type==QLETYPE.TERM){
+            exp_text = exp_text + expression[i].name;
+        }else{
+            exp_text = exp_text + expression[i];
+        }
+    }
+    return exp_text;
+}
+
 
 
 function begin() {
@@ -333,11 +412,14 @@ function begin() {
     }
     ql_expression = pletext.replace(/#[ \n]*?(?<define>((\w[\w\d]*) +?(\d+) +?((\d+ *)+)[ \n]*)+)/g, ''); // 去除输入的文本中自定义联结词的部分
     check_ql_expression(ql_expression);
-    parse_ql_expression(ql_expression);
+    if(parse_ql_expression(ql_expression)==false){
+        return;
+    }
     origin_parsed_ql_expression = parsed_ql_expression.slice(0);
     len = var_name_list.length;
     maxdec = Math.pow(2,len);
     result_truth = [];
+    result_truth.var_len = len;
     for(var ith=0;ith<maxdec;ith++){
         assion_value(ith, len);
         calculate(parsed_ql_expression);
@@ -346,31 +428,21 @@ function begin() {
     }
 
 
-    // if (result_truth.indexOf(0) == -1) {
-    //     show_message('永真式');
-    //     tfflag = 1;
-    // } else if (result_truth.indexOf(1) == -1) {
-    //     show_message('永假式');
-    // } else {
-    //     var_value = [];
-    //     for (i = 0; i < result_truth.length; i++) {
-    //         if (result_truth[i] == 1) {
-    //             var_value.push(dec2bin(i, var_name_list.length));
-    //         }
-    //     }
-    //     show_message(var_value);
-    // }
-    show_message(result_truth);
+    if (result_truth.indexOf(0) == -1) {
+        show_message('永真式');
+        tfflag = 1;
+    } else if (result_truth.indexOf(1) == -1) {
+        show_message('永假式');
+    } else {
+        var_value = [];
+        for (i = 0; i < result_truth.length; i++) {
+            if (result_truth[i] == 1) {
+                var_value.push(dec2bin(i, var_name_list.length));
+            }
+        }
+        show_message('不是永真式,当且仅当变量取以下值时为真：',1, var_value);
+    }
 
-
-
-    //calculate(parsed_ql_expression);
-
-
-    //alert(ql_expression)
-    //var result = get_function_value(ql_expression);
-    //show_message(parsed_ql_expression[0]);
-    //show_message(result_truth);
 }
 
 function check_ql_expression(pletext) {
@@ -496,13 +568,13 @@ function funcompleset(){
         }
         tmp_generated_expressions = [];
         if(fcs_result==true){
-            show_message("完全");
+            show_message("完全.\n全部16个公式：", 3);
             break;
         }
     }
 
     if(fcs_result==false){
-        show_message("不完全");
+        show_message("不完全.\n可以生成"+generated_expressions.length+"个互不等值的公式：", 2);
     }
 
 }
