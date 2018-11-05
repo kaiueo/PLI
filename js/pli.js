@@ -12,6 +12,8 @@ var var_name_list = []; // 存储变元名称
 var generated_expressions = [];
 var expression_records = [];
 var base_expressions = [];
+var advance_expressions = [];
+var tmp_generated_expressions = [];
 
 function QLElement(type, name) {
     this.type = type;
@@ -466,6 +468,9 @@ function funcompleset(){
     generated_expressions.push([var_names["q"]]);
     expression_records[5] = 1;
 
+
+
+
     show_message('');
 
     generate_first_class_conj()
@@ -474,34 +479,98 @@ function funcompleset(){
         return;
     }
 
-    generate_base_expression();
-    generate_advance_expression();
-}
+    base_expressions.push([var_names["p"]]);
+    base_expressions.push([var_names["q"]]);
+    advance_expressions = [];
+    tmp_generated_expressions = [];
+    var fcs_result = false;
 
-function generate_base_expression(){
-    var con_len = custom_conj_names.length;
-    for(var i = 0; i<con_len;i++){
-        var conj = custom_conj[custom_conj_names[i]];
-
-        var rp_result = rp(2, conj.num);
-        for(var j = 0;j<rp_result.length;j++){
-            var expression = [];
-            expression.push(new QLElement(QLETYPE.CONJ, conj.name));
-            expression.push('(');
-            for(var k = 0;k<conj.num;k++){
-                expression.push(var_names[var_name_list[rp_result[j][k]]]);
-                expression.push(',');
-            }
-            expression.splice(expression.length-1);
-            expression.push(')');
-            var truth_table = calculate_truth_table(expression);
-            is_new_expression(expression, truth_table, 1);
+    for(var i = 0;i<5;i++){
+        fcs_result = generate_expression();
+        for(var j = 0;j<advance_expressions.length;j++){
+            base_expressions.push(advance_expressions[j]);
+        }
+        advance_expressions = [];
+        for(var j = 0;j<tmp_generated_expressions.length;j++){
+            advance_expressions.push(tmp_generated_expressions[j]);
+        }
+        tmp_generated_expressions = [];
+        if(fcs_result==true){
+            show_message("完全");
+            break;
         }
     }
 
+    if(fcs_result==false){
+        show_message("不完全");
+    }
+
+
+    // generate_base_expression();
+    // generate_advance_expression();
 }
 
-function generate_advance_expression() {
+// function generate_base_expression(){
+//     var con_len = custom_conj_names.length;
+//     for(var i = 0; i<con_len;i++){
+//         var conj = custom_conj[custom_conj_names[i]];
+
+//         var rp_result = rp(2, conj.num);
+//         for(var j = 0;j<rp_result.length;j++){
+//             var expression = [];
+//             expression.push(new QLElement(QLETYPE.CONJ, conj.name));
+//             expression.push('(');
+//             for(var k = 0;k<conj.num;k++){
+//                 expression.push(var_names[var_name_list[rp_result[j][k]]]);
+//                 expression.push(',');
+//             }
+//             expression.splice(expression.length-1);
+//             expression.push(')');
+//             var truth_table = calculate_truth_table(expression);
+//             is_new_expression(expression, truth_table, 1);
+//         }
+//     }
+
+// }
+
+// function generate_advance_expression() {
+//     var con_len = custom_conj_names.length;
+//     var max_num = 0;
+
+//     for(var i = 0;i<con_len;i++){
+//         if(custom_conj[custom_conj_names[i]].num>max_num){
+//             max_num = custom_conj[custom_conj_names[i]].num;
+//         }
+//     }
+
+//     for (var i = 1; i <= max_num; i++) {
+//         for (var j = 0; j < con_len; j++) {
+//             var conj = custom_conj[custom_conj_names[j]];
+//             if (conj.num >= i) {
+//                 var rp_result_adv = rp(base_expressions.length, i);
+//                 var atom_var_len = conj.num - i;
+//                 var rp_result_base = rp(2, atom_var_len);
+//                 for (var a = 0; a < rp_result_adv.length; a++) {
+//                     for (var b = 0; b < rp_result_base.length; b++) {
+
+//                         var expression = assemble_expression(conj, rp_result_adv[a], rp_result_base[b]);
+//                         var truth_table = calculate_truth_table(expression);
+//                         is_new_expression(expression, truth_table, 0);
+//                         if(generated_expressions.length==16){
+//                             show_message("完全");
+//                         }
+//                     }
+//                 }
+//             }
+
+//         }
+//     }
+//     if(generated_expressions.length<16){
+//         show_message("不完全");
+//     }
+// }
+
+function generate_expression(){
     var con_len = custom_conj_names.length;
     var max_num = 0;
 
@@ -511,21 +580,25 @@ function generate_advance_expression() {
         }
     }
 
-    for (var i = 1; i <= max_num; i++) {
+
+
+    var min_i = 0;
+    if(advance_expressions.length>0){
+        min_i = 1;
+    }
+
+    for (var i = min_i; i <= max_num; i++) {
         for (var j = 0; j < con_len; j++) {
             var conj = custom_conj[custom_conj_names[j]];
             if (conj.num >= i) {
-                var rp_result_adv = rp(base_expressions.length, i);
-                var atom_var_len = conj.num - i;
-                var rp_result_base = rp(2, atom_var_len);
+                var rp_result_adv = rp(advance_expressions.length, i);
+                var base_len = conj.num - rp_result_adv[0].length;
+                var rp_result_base = rp(base_expressions.length, base_len);
                 for (var a = 0; a < rp_result_adv.length; a++) {
                     for (var b = 0; b < rp_result_base.length; b++) {
-
-                        var expression = assemble_expression(conj, rp_result_adv[a], rp_result_base[b]);
-                        var truth_table = calculate_truth_table(expression);
-                        is_new_expression(expression, truth_table, 0);
+                        assemble_expression_general(conj, rp_result_adv[a], rp_result_base[b]);
                         if(generated_expressions.length==16){
-                            show_message("完全");
+                            return true;
                         }
                     }
                 }
@@ -534,8 +607,8 @@ function generate_advance_expression() {
         }
     }
     if(generated_expressions.length<16){
-        show_message("不完全");
-    }
+        return false;
+    } 
 }
 
 
@@ -559,6 +632,39 @@ function assemble_expression(conj, rp_adv, rp_base){
     return expression;
 }
 
+function assemble_expression_general(conj, rp_adv, rp_base){
+    
+    var rp_exp = [];
+    for(var i = 0;i<rp_adv.length;i++){
+        rp_exp.push(advance_expressions[rp_adv[i]]);
+    }
+    for(var i = 0;i<rp_base.length;i++){
+        rp_exp.push(base_expressions[rp_base[i]]);
+    }
+    var per_arr = [];
+    for(var i = 0;i<rp_exp.length;i++){
+        per_arr.push(i);
+    }
+    var per_result = permutation(per_arr);
+    for(var i = 0;i<per_result.length;i++){
+        var expression = [];
+        expression.push(new QLElement(QLETYPE.CONJ, conj.name));
+        expression.push('(');
+        for(var j = 0;j<per_result[i].length;j++){
+            var tmp_exp = rp_exp[per_result[i][j]];
+            expression = expression.concat(tmp_exp);
+            expression.push(',');
+        }
+        expression.splice(expression.length-1);
+        expression.push(')');
+        
+        var truth_table = calculate_truth_table(expression);
+        is_new_expression(expression, truth_table);
+        
+    }
+    
+}
+
 function calculate_truth_table(expression){
     parsed_ql_expression = expression.slice(0);
     var len = var_name_list.length;
@@ -573,15 +679,37 @@ function calculate_truth_table(expression){
     return result_truth;
 }
 
-function is_new_expression(expression, truth_table, base){
+function is_new_expression(expression, truth_table){
     var dec = bin2dec(truth_table);
     if(expression_records[dec]==-1){
         var len = generated_expressions.length;
         expression_records[dec] = len;
         generated_expressions.push(expression.slice(0));
-        if(base==1){
-            base_expressions.push(expression.slice(0));
-        }
+        advance_expressions.push(expression.slice(0));
     }
 
 }
+
+function permutation(arr){
+	if (arr.length == 1)
+		return [arr];
+	else if (arr.length == 2)
+		return [[arr[0],arr[1]],[arr[1],arr[0]]];
+	else {
+		var temp = [];
+		for (var i = 0; i < arr.length; i++) {
+			var save = arr[i];
+			arr.splice(i, 1);//取出arr[i]
+			var res = permutation(arr);//递归排列arr[0],arr[1],...,arr[i-1],arr[i+1],...,arr[n]
+			arr.splice(i, 0, save);//将arr[j]放入数组，保持原来的位置
+			for (var j = 0; j < res.length; j++) {
+                //res[j].push(arr[i]);
+                res[j].unshift(arr[i]);
+				temp.push(res[j]);//将arr[j]组合起来
+			}
+		}
+		return temp;
+	}
+}
+
+
