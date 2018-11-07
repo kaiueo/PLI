@@ -40,7 +40,13 @@ function parse_ql_expression(ql_expression) {
                 show_message('联结词' + name + '未定义');
                 return false;
             } else if  (custom_conj_names.indexOf(name) != -1) {
-                parsed_ql_expression.push(new QLElement(QLETYPE.CONJ, name));
+                if(custom_conj[name].num==0){
+                    var zero_connection = new QLElement(QLETYPE.CONJ, name);
+                    zero_connection.value = custom_conj[name][0];
+                    parsed_ql_expression.push(zero_connection);
+                }else{
+                    parsed_ql_expression.push(new QLElement(QLETYPE.CONJ, name));
+                }
             } else {
                 if (var_name_list.indexOf(name) == -1) {
                     var_name_list.push(name);
@@ -102,6 +108,10 @@ function calculate(parsed_ql_expression) {
         }
         if(tmp_expression.indexOf(',')!=-1){
             var conj_name = parsed_ql_expression[last_lp_index-1].name;
+            if(custom_conj[conj_name].num==0){
+                show_message("0元联结词"+conj_name+"后面不能接参数！");
+                throw new Error("0元联结词后不能接参数！");
+            }
             var expression_value = get_function_value(conj_name, custom_conj[conj_name].num, tmp_expression);
             replace_expression(parsed_ql_expression, last_lp_index - 1, rp_index, expression_value); //左边要包含联结词名称
         } else if (tmp_expression.indexOf('∧') != -1 ||
@@ -117,11 +127,16 @@ function calculate(parsed_ql_expression) {
                 show_message("括号里内容不能为空！");
                 throw new Error("括号里内容不能为空！");
             }
+            
             term_value = get_term_value(tmp_expression);
             if(last_lp_index-1>=0&&parsed_ql_expression[last_lp_index-1].type==QLETYPE.CONJ){
                 var conj_name = parsed_ql_expression[last_lp_index-1].name;
                 var func = custom_conj[conj_name];
-                if(func.num!=0&&func.num!=1){
+                if(func.num==0){
+                    show_message("0元联结词"+conj_name+"后面不能接参数！");
+                    throw new Error("0元联结词后不能接参数！");
+                }
+                if(func.num!=1){
                     show_message("联结词"+func.name+"需要"+func.num+"个参数！");
                     throw new Error("联结词参数不匹配");
                 }
@@ -268,12 +283,9 @@ function get_function_value(function_name, function_dim, inner_expression){
         term_values.push(term_value);
     }
 
-    if((!(function_dim==0&&term_values.length==1))&&function_dim!=term_values.length){
-        if(function_dim==0){
-            show_message("联结词"+function_name+"需要1个参数！");
-        }else{
-            show_message("联结词"+function_name+"需要"+function_dim+"个参数！");
-        }
+    if(function_dim!=term_values.length){
+        
+        show_message("联结词"+function_name+"需要"+function_dim+"个参数！");
         throw new Error("联结词参数不匹配");
     }
     func = custom_conj[function_name];
@@ -290,13 +302,19 @@ function bin2dec(binary_array){
 }
 
 function get_term_value(term){
-    // 前面有非符号
+    // 前面无非符号
     if(term.length==1){
         if(term[0]==0||term[0]==1){
             return term[0];
         }
         else{
-            return term[0].value;
+            if(term[0].type!=QLETYPE.TERM&&!(term[0].type==QLETYPE.CONJ&&custom_conj[term[0].name].num==0)){
+                show_message("联结词"+term[0].name+"后面缺少相应的参数！");
+                throw new Error("联结词后缺少参数！");
+            }else{
+                return term[0].value;
+            }
+            
         }
     }else{
         if(term[1]==0){
@@ -304,10 +322,17 @@ function get_term_value(term){
         }else if(term[1]==1)
         {
             return 0;
-        }else if(term[1].value==0){
-            return 1;
         }else{
-            return 0;
+            if(term[1].type!=QLETYPE.TERM&&!(term[1].type==QLETYPE.CONJ&&custom_conj[term[1].name].num==0)){
+                show_message("联结词"+term[1].name+"后面缺少相应的参数！");
+                throw new Error("联结词后缺少参数！");
+            }else{
+                if(term[1].value==0){
+                    return 1;
+                }else{
+                    return 0;
+                }
+            }
         }
     }
 }
@@ -359,9 +384,7 @@ function generate_conj(name, num, truth) {
         for (i = 0; i < truth.length; i++) {
             conj.push(parseInt(truth[i]));
         }
-        if(conj.num==0){
-            conj.push(parseInt(truth[0]));
-        }
+
         custom_conj[conj.name] = conj;
         custom_conj_names.push(conj.name);
         return true;
