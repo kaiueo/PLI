@@ -114,6 +114,10 @@ function calculate(parsed_ql_expression) {
             tmp_expression.push(parsed_ql_expression[i]);
         }
         if(tmp_expression.indexOf(',')!=-1){
+            if(last_lp_index-1<0||parsed_ql_expression[last_lp_index-1].type!=QLETYPE.CONJ){
+                show_message("括号前缺少联结词！");
+                throw new Error("括号前缺少联结词！");
+            }
             var conj_name = parsed_ql_expression[last_lp_index-1].name;
             if(custom_conj[conj_name].num==0){
                 show_message("0元联结词"+conj_name+"后面不能接参数！");
@@ -198,6 +202,10 @@ function get_first_class_conj_value(inner_expression, conj_name){
 
     for(i=0;i<2;i++){
         term = []
+        if(l_index==r_index){
+            show_message("联结词"+conj_name+"缺少变元！");
+            throw new Error("连接词缺少变元！")
+        }
         for(var j=l_index;j<r_index;j++){
             term.push(inner_expression[j]);
         }
@@ -207,7 +215,7 @@ function get_first_class_conj_value(inner_expression, conj_name){
         // 防止r_index越界
         if (i == 0) {
             l_index = r_index + 1;
-            r_index = l_index + 1;
+            r_index = l_index;
             while (r_index < inner_expression.length && is_var(inner_expression[r_index])) {
                 r_index = r_index + 1;
             }
@@ -298,6 +306,10 @@ function bin2dec(binary_array){
 function get_term_value(term){
     // 前面无非符号
     if(term.length==1){
+        if(term[0]=='¬'){
+            show_message("¬后缺少变元！");
+            throw new Error("¬后缺少变元！");
+        }
         if(term[0]==0||term[0]==1){
             return term[0];
         }
