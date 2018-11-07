@@ -113,10 +113,18 @@ function calculate(parsed_ql_expression) {
             var expression_value = calculate_no_bucket_expression(tmp_expression);
             replace_expression(parsed_ql_expression, last_lp_index, rp_index, expression_value);
         }else{
+            if(tmp_expression.length==0){
+                show_message("括号里内容不能为空！");
+                throw new Error("括号里内容不能为空！");
+            }
             term_value = get_term_value(tmp_expression);
             if(last_lp_index-1>=0&&parsed_ql_expression[last_lp_index-1].type==QLETYPE.CONJ){
                 var conj_name = parsed_ql_expression[last_lp_index-1].name;
                 var func = custom_conj[conj_name];
+                if(func.num!=0&&func.num!=1){
+                    show_message("联结词"+func.name+"需要"+func.num+"个参数！");
+                    throw new Error("联结词参数不匹配");
+                }
                 var expression_value = func[term_value];
                 //var expression_value = get_function_value(conj_name, custom_conj[conj_name].num, tmp_expression);
                 replace_expression(parsed_ql_expression, last_lp_index - 1, rp_index, expression_value); 
@@ -199,23 +207,74 @@ function replace_expression(expression, left, right, value){
 }
 
 function get_function_value(function_name, function_dim, inner_expression){
+    var tmp_inner_expression = inner_expression.slice(0);
     l_index = 0;
-    r_index = inner_expression.indexOf(',');
+    r_index = tmp_inner_expression.indexOf(',');
     term_values = [];
 
-    for(var i=0;i<function_dim;i++){
-        term = []
-        for(j=l_index;j<r_index;j++){
-            term.push(inner_expression[j]);
+    // for(var i=0;i<function_dim;i++){
+    //     term = []
+    //     for(j=l_index;j<r_index;j++){
+    //         term.push(inner_expression[j]);
+    //     }
+    //     term_value = get_term_value(term);
+    //     term_values.push(term_value);
+    //     l_index = r_index + 1;
+    //     r_index = l_index;
+    //     while(r_index<inner_expression.length&&inner_expression[r_index]!=','){
+    //         r_index = r_index + 1;
+    //     }
+        
+    // }
+
+    // while(r_index<=inner_expression.length){
+    //     term = []
+    //     for(j=l_index;j<r_index;j++){
+    //         term.push(inner_expression[j]);
+    //     }
+    //     term_value = get_term_value(term);
+    //     term_values.push(term_value);
+    //     l_index = r_index + 1;
+    //     r_index = l_index;
+    //     while(r_index<inner_expression.length&&inner_expression[r_index]!=','){
+    //         r_index = r_index + 1;
+    //     }
+    // }
+
+    while(r_index!=-1){
+        if(r_index==0){
+            show_message("联结词"+function_name+"参数错误！");
+            throw new Error("联结词参数不匹配");
+        }
+        var term = [];
+        for(var i = 0;i<r_index;i++){
+            term.push(tmp_inner_expression[i]);
         }
         term_value = get_term_value(term);
         term_values.push(term_value);
-        l_index = r_index + 1;
-        r_index = l_index + 1;
-        while(r_index<inner_expression.length&&inner_expression[r_index]!=','){
-            r_index = r_index + 1;
+        tmp_inner_expression.splice(0, r_index+1);
+        r_index = tmp_inner_expression.indexOf(',');
+    }
+
+    if(tmp_inner_expression.length==0){
+        show_message("联结词"+function_name+"参数错误！");
+        throw new Error("联结词参数不匹配");
+    }else{
+        var term = [];
+        for(var i = 0;i<tmp_inner_expression.length;i++){
+            term.push(tmp_inner_expression[i]);
         }
-        
+        term_value = get_term_value(term);
+        term_values.push(term_value);
+    }
+
+    if((!(function_dim==0&&term_values.length==1))&&function_dim!=term_values.length){
+        if(function_dim==0){
+            show_message("联结词"+function_name+"需要1个参数！");
+        }else{
+            show_message("联结词"+function_name+"需要"+function_dim+"个参数！");
+        }
+        throw new Error("联结词参数不匹配");
     }
     func = custom_conj[function_name];
     return func[bin2dec(term_values)];
