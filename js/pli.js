@@ -165,6 +165,14 @@ function calculate(parsed_ql_expression) {
 
 // 计算没有括号的公式的值（公式内部的子公式）
 function calculate_no_bucket_expression(inner_expression){
+    if (inner_expression.indexOf('∧') == -1 &&
+        inner_expression.indexOf('∨') == -1 &&
+        inner_expression.indexOf('⊕') == -1 &&
+        inner_expression.indexOf('→') == -1 &&
+        inner_expression.indexOf('↔') == -1) {
+        return get_term_value(inner_expression);
+    }
+
     while(inner_expression.length!=1){
         if(inner_expression.indexOf('∧')!=-1){
             get_first_class_conj_value(inner_expression, '∧');
@@ -192,13 +200,13 @@ function calculate_no_bucket_expression(inner_expression){
 function get_first_class_conj_value(inner_expression, conj_name){
 
     var r_index = inner_expression.indexOf(conj_name);
-    l_index = r_index-1;
+    var l_index = r_index-1;
     while(l_index>=0&&is_var(inner_expression[l_index])){
         l_index = l_index - 1;
     }
     l_index = l_index + 1;
-    left = l_index;
-    term_values = [];
+    var left = l_index;
+    var term_values = [];
 
     for(i=0;i<2;i++){
         term = []
@@ -254,7 +262,7 @@ function get_function_value(function_name, function_dim, inner_expression){
     var tmp_inner_expression = inner_expression.slice(0);
     l_index = 0;
     r_index = tmp_inner_expression.indexOf(',');
-    term_values = [];
+    var term_values = [];
 
     while(r_index!=-1){
         if(r_index==0){
@@ -265,7 +273,7 @@ function get_function_value(function_name, function_dim, inner_expression){
         for(var i = 0;i<r_index;i++){
             term.push(tmp_inner_expression[i]);
         }
-        term_value = get_term_value(term);
+        term_value = calculate_no_bucket_expression(term);
         term_values.push(term_value);
         tmp_inner_expression.splice(0, r_index+1);
         r_index = tmp_inner_expression.indexOf(',');
@@ -279,7 +287,7 @@ function get_function_value(function_name, function_dim, inner_expression){
         for(var i = 0;i<tmp_inner_expression.length;i++){
             term.push(tmp_inner_expression[i]);
         }
-        term_value = get_term_value(term);
+        term_value = calculate_no_bucket_expression(term);
         term_values.push(term_value);
     }
 
