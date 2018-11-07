@@ -528,6 +528,45 @@ function begin() {
 }
 
 function check_ql_expression(pletext) {
+    var ql_expression_text = pletext.replace(/[ \n]+/g, '');
+    var bucket = [];
+    if(ql_expression_text.length==0){
+        show_message("公式为空！");
+        throw new Error("公式为空！");
+    }
+    var i = 0;
+
+    if(/\)[A-Za-z0-9]?\(/.test(ql_expression_text)==true){
+        show_message("括号不匹配！");
+        throw new Error("括号不匹配！");
+    }
+
+    while(i<ql_expression_text.length){
+        if(ql_expression_text[i]=='('){
+            bucket.push('(');
+        }
+        else if(ql_expression_text[i]==')'){
+            if(bucket.length>0){
+                bucket.pop();
+            }else{
+                show_message("括号不匹配！");
+                throw new Error("括号不匹配！");
+            }
+        }else if(ql_expression_text[i].search(/[A-Za-z]/) != -1){
+            var result = get_var_name(ql_expression_text, i);
+            i = result['offset'];
+        }else if(ql_expression_text[i].search(/[0-9]/)!=-1){
+            if(i+1<ql_expression_text.length&&ql_expression_text[i+1].search(/[A-Za-z]/)!=-1){
+                show_message("变量不能以数字开头！");
+                throw new Error("变量不能以数组开头!");
+            }
+        }
+        i = i+1;
+    }
+    if(bucket.length!=0){
+        show_message("括号不匹配！");
+        throw new Error("括号不匹配！");
+    }
 
 }
 
