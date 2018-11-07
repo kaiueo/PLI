@@ -27,7 +27,7 @@ var QLETYPE = {
     FIRC: 2,
 }
 
-
+// 将公式文本解析为本程序计算的存储公式元素的数组
 function parse_ql_expression(ql_expression) {
     var i = 0;
     ql_expression = ql_expression.replace(/[ \n]+/g, '');
@@ -69,6 +69,9 @@ function parse_ql_expression(ql_expression) {
     return true;
 }
 
+// 为公式赋值
+// i: 所赋的值
+// len: 公式中变元的个数
 function assion_value(i, len){
     bin_list = dec2bin(i, len);
     for(j=0;j<len;j++){
@@ -76,6 +79,9 @@ function assion_value(i, len){
     }
 }
 
+// 将十进制的数转换为二进制的数组
+// n: 带转换的十进制数
+// len: 二进制数组的长度
 function dec2bin(n, len){
     bin_list = []
     if(n==0){
@@ -95,6 +101,7 @@ function dec2bin(n, len){
     
 }
 
+// 计算公式的值
 function calculate(parsed_ql_expression) {
     var last_lp_index = 0;
     while ((last_lp_index = parsed_ql_expression.lastIndexOf('(')) != -1) {
@@ -152,6 +159,7 @@ function calculate(parsed_ql_expression) {
 
 }
 
+// 计算没有括号的公式的值（公式内部的子公式）
 function calculate_no_bucket_expression(inner_expression){
     while(inner_expression.length!=1){
         if(inner_expression.indexOf('∧')!=-1){
@@ -174,6 +182,9 @@ function calculate_no_bucket_expression(inner_expression){
     return inner_expression[0];
 }
 
+// 得到原生二元联结词（∧,∨,→,⊕,↔）的值
+// inner_expression: 包含原生二元联结词的公式
+// conj_name: 原生二元联结词
 function get_first_class_conj_value(inner_expression, conj_name){
 
     var r_index = inner_expression.indexOf(conj_name);
@@ -208,6 +219,7 @@ function get_first_class_conj_value(inner_expression, conj_name){
     replace_expression(inner_expression, left, r_index-1, expression_value);
 }
 
+// 判断一个元素是否为变元
 function is_var(qlelement){
     if(qlelement=='∧'||qlelement=='∨'||qlelement=='→'||qlelement=='⊕'||qlelement=='↔'){
         return false
@@ -216,45 +228,25 @@ function is_var(qlelement){
 
 }
 
+// 将公式指定位置替换为指定的内容
+// expression: 公式
+// left: 待替换左起位置
+// right: 待替换的右端位置
+// value: 要替换的值
 function replace_expression(expression, left, right, value){
     expression.splice(left, right-left+1);
     expression.splice(left, 0, value);
 }
 
+// 得到包含联结词的公式的值
+// function_name: 联结词名称
+// function_dim: 联结词的元数
+// inner_expression: 待求值公式
 function get_function_value(function_name, function_dim, inner_expression){
     var tmp_inner_expression = inner_expression.slice(0);
     l_index = 0;
     r_index = tmp_inner_expression.indexOf(',');
     term_values = [];
-
-    // for(var i=0;i<function_dim;i++){
-    //     term = []
-    //     for(j=l_index;j<r_index;j++){
-    //         term.push(inner_expression[j]);
-    //     }
-    //     term_value = get_term_value(term);
-    //     term_values.push(term_value);
-    //     l_index = r_index + 1;
-    //     r_index = l_index;
-    //     while(r_index<inner_expression.length&&inner_expression[r_index]!=','){
-    //         r_index = r_index + 1;
-    //     }
-        
-    // }
-
-    // while(r_index<=inner_expression.length){
-    //     term = []
-    //     for(j=l_index;j<r_index;j++){
-    //         term.push(inner_expression[j]);
-    //     }
-    //     term_value = get_term_value(term);
-    //     term_values.push(term_value);
-    //     l_index = r_index + 1;
-    //     r_index = l_index;
-    //     while(r_index<inner_expression.length&&inner_expression[r_index]!=','){
-    //         r_index = r_index + 1;
-    //     }
-    // }
 
     while(r_index!=-1){
         if(r_index==0){
@@ -292,6 +284,7 @@ function get_function_value(function_name, function_dim, inner_expression){
     return func[bin2dec(term_values)];
 }
 
+// 将二进制数组转换为十进制的数值
 function bin2dec(binary_array){
     binary_array.reverse();
     var decimal = 0;
@@ -301,6 +294,7 @@ function bin2dec(binary_array){
     return decimal;
 }
 
+// 得到某一个项的值
 function get_term_value(term){
     // 前面无非符号
     if(term.length==1){
@@ -337,6 +331,7 @@ function get_term_value(term){
     }
 }
 
+// 从公式文本中解析出变量名字
 function get_var_name(qlf, offset) {
     name = qlf[offset];
     while (offset + 1 < qlf.length && qlf[offset + 1].search(/[¬∧∨→⊕↔),(]/) == -1) {
@@ -368,7 +363,10 @@ function generate_first_class_conj() {
     first_class_conj_names = ['¬', '∧', '∨', '→', '⊕', '↔'];
 }
 
-//生成联结词计算函数
+// 生成联结词计算函数
+// name: 联结词名称
+// num: 连接词元数
+// truth: 连接词真值表最后一列
 function generate_conj(name, num, truth) {
     var conj = [];
     conj.name = name;
@@ -394,6 +392,10 @@ function generate_conj(name, num, truth) {
     }
 }
 
+// 显示结果
+// message: 要现实的信息 
+// type: 0（只显示信息）、1（显示判断公式是否为永真永假判断的信息）、2（显示联结词集不完全时的信息）、3（显示联结词完全时的信息）
+// array: 仅当type为1时使用，此时存储的为使公式为真时的变元赋值信息
 function show_message(message, type=0, arr=[]) {
     var messagelabel = document.getElementById('messagelabel');
     var resultdiv = document.getElementById('resultdiv');
@@ -459,6 +461,7 @@ function show_message(message, type=0, arr=[]) {
     //document.getElementById('messagelabel').innerText = message;
 }
 
+// 将程序内部存储的公式转换为文本显示的公式
 function get_expression_text(expression){
     var exp_text = "";
     for(var i = 0;i<expression.length;i++){
@@ -473,9 +476,8 @@ function get_expression_text(expression){
     return exp_text;
 }
 
-
-
-function begin() {
+// 判断是否为永真式
+function is_tautology() {
 
     custom_conj = [];
     custom_conj_err_msg = '';
@@ -527,6 +529,7 @@ function begin() {
 
 }
 
+// 对用户输入的公式进行基本的语法检查
 function check_ql_expression(pletext) {
     var ql_expression_text = pletext.replace(/[ \n]+/g, '');
     var bucket = [];
@@ -570,6 +573,7 @@ function check_ql_expression(pletext) {
 
 }
 
+// 自定义联结词解析
 function custom_func_define(pletext) {
 
     /* 
@@ -616,6 +620,8 @@ function custom_func_define(pletext) {
 }
 
 // 可重复排列函数
+// n_array: 待排列物品的个数
+// n_len: 排列结果的长度
 function rp(n_array, n_len) {
     var result = [];
     var arr = [];
@@ -635,6 +641,7 @@ function rp(n_array, n_len) {
     return result;
 }
 
+// 判断是否完全集
 function funcompleset(){
     custom_conj = [];
     custom_conj_err_msg = '';
@@ -660,9 +667,6 @@ function funcompleset(){
     expression_records[3] = 0;
     generated_expressions.push([var_names["q"]]);
     expression_records[5] = 1;
-
-
-
 
     show_message('');
 
@@ -700,6 +704,7 @@ function funcompleset(){
 
 }
 
+// 生成公式
 function generate_expression(){
     var con_len = custom_conj_names.length;
     var max_num = 0;
@@ -709,8 +714,6 @@ function generate_expression(){
             max_num = custom_conj[custom_conj_names[i]].num;
         }
     }
-
-
 
     var min_i = 0;
     if(advance_expressions.length>0){
@@ -742,7 +745,10 @@ function generate_expression(){
 }
 
 
-
+// 将联结词和参数组装为公式
+// conj: 联结词
+// rp_adv: 要组装的高级公式
+// rp_base: 要组装的基本公式
 function assemble_expression(conj, rp_adv, rp_base){
     var expression = [];
     expression.push(new QLElement(QLETYPE.CONJ, conj.name));
@@ -762,6 +768,11 @@ function assemble_expression(conj, rp_adv, rp_base){
     return expression;
 }
 
+
+// 将联结词和参数组装为公式
+// conj: 联结词
+// rp_adv: 要组装的高级公式
+// rp_base: 要组装的基本公式
 function assemble_expression_general(conj, rp_adv, rp_base){
     
     var rp_exp = [];
@@ -795,6 +806,7 @@ function assemble_expression_general(conj, rp_adv, rp_base){
     
 }
 
+// 计算公式的真值表
 function calculate_truth_table(expression){
     parsed_ql_expression = expression.slice(0);
     var len = var_name_list.length;
@@ -809,6 +821,9 @@ function calculate_truth_table(expression){
     return result_truth;
 }
 
+// 判断公式是否为新的联结词
+// expression: 公式
+// truth_table: 公式的真值表
 function is_new_expression(expression, truth_table){
     var dec = bin2dec(truth_table);
     if(expression_records[dec]==-1){
@@ -820,6 +835,7 @@ function is_new_expression(expression, truth_table){
 
 }
 
+// 生成排列
 function permutation(arr){
 	if (arr.length == 1)
 		return [arr];
