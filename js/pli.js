@@ -704,6 +704,12 @@ function funcompleset(){
 
     for(var i = 0;i<25;i++){
         fcs_result = generate_expression();
+
+        // 在更高层的嵌套生成公式中没有生成新公式，则下一层同样不会生成新公式，可以提前结束
+        if(tmp_generated_expressions.length==0){
+            break;
+        }
+
         for(var j = 0;j<advance_expressions.length;j++){
             base_expressions.push(advance_expressions[j]);
         }
