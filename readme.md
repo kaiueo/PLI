@@ -204,15 +204,29 @@ i(p,q)
 
 ---
 
-\#f 3 11000010 p→q↔f(f(q,q,p),f(p,p,p),p) 
+\#f 3 11000010
 
-永真式 
+完全.
+全部16个公式： 
 
----
-
-\#f 3 11000010 ¬p↔f(p,p,p)
-
-永真式 
+p
+q
+f(p,p,p)
+f(p,p,q)
+f(p,q,p)
+f(q,q,q)
+f(f(p,p,p),p,p)
+f(p,p,f(p,p,p))
+f(f(p,p,p),q,p)
+f(p,q,f(p,p,p))
+f(f(p,p,p),q,q)
+f(q,q,f(p,p,p))
+f(p,p,f(p,p,q))
+f(f(p,p,q),q,p)
+f(f(p,p,p),f(p,p,q),f(p,p,p))
+f(f(p,p,p),f(p,p,p),f(p,q,p))
+p→q↔f(p,p,f(p,p,q))
+¬p↔f(p,p,p)
 
 ---
 
