@@ -516,7 +516,7 @@ function is_tautology() {
     if (!custom_func_define(pletext)) {
         return;
     }
-    ql_expression = pletext.replace(/#[ \n]*?(?<define>((\w[\w\d]*) +?(\d+) +?((\d+ *)+)[ \n]*)+)/g, ''); // 去除输入的文本中自定义联结词的部分
+    ql_expression = pletext.replace(/#[ \n]*?(((\w[\w\d]*) +?(\d+) +?((\d+ *)+)[ \n]*)+)/g, ''); // 去除输入的文本中自定义联结词的部分
     check_ql_expression(ql_expression);
     if(parse_ql_expression(ql_expression)==false){
         return;
@@ -605,7 +605,7 @@ function custom_func_define(pletext) {
         然后为多个数字，后面跟1个或多个空格
         然后为多个数字，数字之间可有空格也可没有空格
     */
-    var custom_func_re = /#[ \n]*?(?<defines>((\w[\w\d]*) +?(\d+) +?((\d+ *)+)[ \n]*)+)/;
+    var custom_func_re = /#[ \n]*?(((\w[\w\d]*) +?(\d+) +?((\d+ *)+)[ \n]*)+)/;
     ///#\n*?(?<defines>((\w[\w\d]*) +?(\d+) +?((\d+ *)+)\n*)+)/;
 
 
@@ -613,7 +613,7 @@ function custom_func_define(pletext) {
     if (match_groups == null) {
         return true;
     }
-    all_defines = match_groups.groups.defines;
+    all_defines = match_groups[1];
 
     /*
         上面正则中取消前面#换行部分剩下的内容
@@ -621,11 +621,11 @@ function custom_func_define(pletext) {
     var is_success = true
     defines_re = /(\w[\w\d]*) +?(\d+) +?((\d+ *)+)\n*/g;
     while ((func_define = defines_re.exec(all_defines)) != null) {
-        define_re = /(?<name>\w[\w\d]*) +?(?<num>\d+) +?(?<truth>(\d+ *)+)/;
+        define_re = /(\w[\w\d]*) +?(\d+) +?((\d+ *)+)/;
         define = define_re.exec(func_define);
-        var name = define.groups.name;
-        var num = define.groups.num;
-        var truth = define.groups.truth;
+        var name = define[1];
+        var num = define[2];
+        var truth = define[3];
 
         is_success = generate_conj(name, num, truth) && is_success
     }
