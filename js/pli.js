@@ -64,8 +64,8 @@ function parse_ql_expression(ql_expression) {
         }
         i = i + 1;
     }
-    parsed_ql_expression.splice(0, 0, '(');
-    parsed_ql_expression.push(')');
+    //parsed_ql_expression.splice(0, 0, '(');
+    //parsed_ql_expression.push(')');
     return true;
 }
 
@@ -103,6 +103,8 @@ function dec2bin(n, len){
 
 // 计算公式的值
 function calculate(parsed_ql_expression) {
+    parsed_ql_expression.splice(0, 0, '(');
+    parsed_ql_expression.push(')');
     var last_lp_index = 0;
     while ((last_lp_index = parsed_ql_expression.lastIndexOf('(')) != -1) {
         var rp_index = last_lp_index + 1;
@@ -744,6 +746,16 @@ function generate_expression(){
     var min_i = 0;
     if(advance_expressions.length>0){
         min_i = 1;
+    }
+
+    for(var i = 0;i<custom_conj_names.length;i++){
+        if(custom_conj[custom_conj_names[i]].num==0){
+            var zero_connective = new QLElement(QLETYPE.CONJ, custom_conj_names[i]);
+            zero_connective.value = custom_conj[custom_conj_names[i]][0];
+            var expression = [zero_connective];
+            var truth_table = calculate_truth_table(expression);
+            is_new_expression(expression, truth_table);
+        }
     }
 
     for (var i = min_i; i <= max_num; i++) {
